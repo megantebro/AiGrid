@@ -1,5 +1,5 @@
 import flet as ft
-from client_mode import client_ui
+from client.client_mode import client_ui
 from node.node_mode import node_ui
 
 def main(page: ft.Page):

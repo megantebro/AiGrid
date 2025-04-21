@@ -2,8 +2,7 @@ from flask import Flask, request, jsonify
 import requests
 import socket
 import psutil
-from pynvml import nvmlInit,nvmlDeviceGetHandleByIndex,nvmlDeviceGetUtilizationRates
-
+from node.llm_server.get_gpu_data import get_gpu_info
 app = Flask(__name__)
 
 # === 基本設定 ===
@@ -17,11 +16,11 @@ def get_my_ip():
 
 def get_gpu_usage():
     try:
-        nvmlInit()
-        handle = nvmlDeviceGetHandleByIndex(0)
-        util = nvmlDeviceGetUtilizationRates(handle)
-        return util.gpu
+        info = get_gpu_info()
+        if info and "utilization.gpu" in info[0]:
+            return float(info[0]["utilization.gpu"])
     except Exception as e:
+        print(e)
         return -1
 
 # === リソース情報を作成 ===
@@ -30,7 +29,7 @@ def get_node_info():
         "ip": get_my_ip(),
         "port": PORT,
         "model": MODEL_NAME,
-        "cpu": psutil.cpu_percent(),
+        "cpu": psutil.cpu_percent(interval=0.1),
         "memory": psutil.virtual_memory().percent,
         "gpu":get_gpu_usage()
     }
@@ -40,7 +39,22 @@ def get_node_info():
 def generate():
     data = request.get_json()
     prompt = data.get("prompt")
-    return jsonify({"result": f"（仮）モデル[{MODEL_NAME}]で生成: {prompt}"})
+    if not prompt:
+        return jsonify({"error": "プロンプトがありません"}), 400
+
+    try:
+        # OllamaのAPIに投げる
+        ollama_res = requests.post("http://localhost:11434/api/generate", json={
+            "model": MODEL_NAME,
+            "prompt": prompt,
+            "stream": False  # ストリームじゃなく一括取得
+        })
+        ollama_res.raise_for_status()
+
+        response_data = ollama_res.json()
+        return jsonify({"result": response_data.get("response", "")})
+    except Exception as e:
+        return jsonify({"error": f"Ollama連携失敗: {str(e)}"}), 500
 
 # === 起動時にサーバーへ登録 ===
 def register_to_server():
@@ -51,6 +65,6 @@ def register_to_server():
     except Exception as e:
         print("❌ サーバー登録失敗:", e)
 
-if __name__ == "__main__":
+def run():
     register_to_server()
     app.run(host="0.0.0.0", port=PORT)

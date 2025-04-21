@@ -1,8 +1,8 @@
 import flet as ft
 import subprocess
 import threading
-import requests
 import os
+from node.llm_server import llm_server
 from node.ollima_install import install_ollama_if_needed
 OLLAMA_INSTALLER_URL = "https://ollama.com/download/OllamaSetup.exe"
 OLLAMA_EXE_NAME = "OllamaSetup.exe"
@@ -47,6 +47,7 @@ def node_ui(page: ft.Page):
             subprocess.Popen(f"ollama run {selected_model}", shell=True)
             status_text.value = f"✅ {selected_model} 起動完了！"
             page.update()
+            llm_server.run()
 
         threading.Thread(target=install_and_run_model, daemon=True).start()
 
