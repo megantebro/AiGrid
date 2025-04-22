@@ -6,7 +6,7 @@ from node.llm_server.get_gpu_data import get_gpu_info
 app = Flask(__name__)
 
 # === 基本設定 ===
-MODEL_NAME = "mistral"
+model_name = ""
 SERVER_URL = "http://localhost:5000"
 PORT = 8000
 
@@ -28,7 +28,7 @@ def get_node_info():
     return {
         "ip": get_my_ip(),
         "port": PORT,
-        "model": MODEL_NAME,
+        "model": model_name,
         "cpu": psutil.cpu_percent(interval=0.1),
         "memory": psutil.virtual_memory().percent,
         "gpu":get_gpu_usage()
@@ -45,7 +45,7 @@ def generate():
     try:
         # OllamaのAPIに投げる
         ollama_res = requests.post("http://localhost:11434/api/generate", json={
-            "model": MODEL_NAME,
+            "model": model_name,
             "prompt": prompt,
             "stream": False  # ストリームじゃなく一括取得
         })
@@ -65,6 +65,8 @@ def register_to_server():
     except Exception as e:
         print("❌ サーバー登録失敗:", e)
 
-def run():
+def run(selected_model):
+    global model_name
+    model_name = selected_model
     register_to_server()
     app.run(host="0.0.0.0", port=PORT)

@@ -1,3 +1,4 @@
+from pydoc import text
 import flet as ft
 import subprocess
 import threading
@@ -25,13 +26,16 @@ def node_ui(page: ft.Page):
         options=[
             ft.dropdown.Option("mistral",text="mistral:4.1GB"),
             ft.dropdown.Option("phi",text="phi:1.8GB"),
-            ft.dropdown.Option("mixtral",text="mixtral:12.8GB"),
+            ft.dropdown.Option("mixtral",text="mixtral:26GB"),
             ft.dropdown.Option("llama2",text="llama2:3.8GB"),
+            ft.dropdown.Option("llama3",text="llama3"),
+            ft.dropdown.Option("chatdolphin2",text="chatdolphin2:4.7GB")
         ]
     )
 
 
     def start_model(e):
+        
         selected_model = model_dropdown.value
         if not selected_model:
             status_text.value = "⚠ モデルを選択してください"
@@ -47,7 +51,7 @@ def node_ui(page: ft.Page):
             subprocess.Popen(f"ollama run {selected_model}", shell=True)
             status_text.value = f"✅ {selected_model} 起動完了！"
             page.update()
-            llm_server.run()
+            llm_server.run(selected_model)
 
         threading.Thread(target=install_and_run_model, daemon=True).start()
 

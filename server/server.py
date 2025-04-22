@@ -16,6 +16,20 @@ def register_node():
 
     return jsonify({"status": "registered"}), 200
 
+@app.route("/get_nodes",methods=["GET"])
+def get_best_nodes():
+    sorted_data = sorted(
+        nodes,
+        key=lambda n: (
+            n.get("cpu", 100),
+            n.get("memory", 100),
+            n.get("gpu", 100 if n.get("gpu", -1) == -1 else n["gpu"])
+        )
+    )
+    return sorted_data
+
+
+
 # 🔹 最適ノード取得エンドポイント
 @app.route("/get_best_node", methods=["GET"])
 def get_best_node():
